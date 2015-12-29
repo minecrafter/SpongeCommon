@@ -35,6 +35,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.mojang.authlib.GameProfile;
 import net.minecraft.block.Block;
 import net.minecraft.block.ITileEntityProvider;
 import net.minecraft.block.state.IBlockState;
@@ -200,6 +201,7 @@ import org.spongepowered.common.util.StaticMixinHelper;
 import org.spongepowered.common.util.VecHelper;
 import org.spongepowered.common.world.CaptureType;
 import org.spongepowered.common.world.DimensionManager;
+import org.spongepowered.common.world.FakePlayer;
 import org.spongepowered.common.world.SpongeChunkPreGenerate;
 import org.spongepowered.common.world.border.PlayerBorderListener;
 import org.spongepowered.common.world.extent.ExtentViewDownsize;
@@ -1596,6 +1598,56 @@ public abstract class MixinWorld implements World, IMixinWorld {
     public void setBlock(int x, int y, int z, BlockState block, boolean notifyNeighbors) {
         checkBlockBounds(x, y, z);
         SpongeHooks.setBlockState(((net.minecraft.world.World) (Object) this), x, y, z, block, notifyNeighbors);
+    }
+
+    private Direction checkValidFace(Direction face) {
+        checkArgument(checkNotNull(face, "side").isCardinal() || face.isUpright(), "Direction must be a valid block face");
+        return face;
+    }
+
+    private GameProfile getProfileFromCause(Cause cause) {
+        checkNotNull(cause, "cause");
+        Optional<Object> simulatedCause = cause.get(NamedCause.PLAYER_SIMULATED, Object.class);
+        checkArgument(simulatedCause.isPresent(), "Cause does not contain a NamedCause.PLAYER_SIMULATED object");
+        Object obj = simulatedCause.get();
+        checkArgument(obj instanceof GameProfile || obj instanceof User, "Simulated cause object is not a GameProfile or User");
+        return obj instanceof GameProfile ? (GameProfile) obj : (GameProfile) ((User) obj).getProfile();
+    }
+
+    @Override
+    public boolean hitBlock(int x, int y, int z, Direction side, Cause cause) {
+        return FakePlayer.controller.hit(this, x, y, z, checkValidFace(side), getProfileFromCause(cause), cause);
+    }
+
+    @Override
+    public boolean interactBlock(int x, int y, int z, Direction side, Cause cause) {
+        return FakePlayer.controller.interact(this, x, y, z, null, checkValidFace(side), getProfileFromCause(cause), cause);
+    }
+
+    @Override
+    public boolean interactBlockWith(int x, int y, int z, org.spongepowered.api.item.inventory.ItemStack itemStack, Direction side, Cause cause) {
+        return FakePlayer.controller.interact(this, x, y, z, checkNotNull(itemStack, "itemStack"), checkValidFace(side), getProfileFromCause(cause),
+                cause);
+    }
+
+    @Override
+    public boolean placeBlock(int x, int y, int z, BlockState block, Direction side, Cause cause) {
+        return FakePlayer.controller.place(this, x, y, z, checkNotNull(block, "block"), checkValidFace(side), getProfileFromCause(cause), cause);
+    }
+
+    @Override
+    public boolean digBlock(int x, int y, int z, Cause cause) {
+        return FakePlayer.controller.dig(this, x, y, z, null, getProfileFromCause(cause), cause);
+    }
+
+    @Override
+    public boolean digBlockWith(int x, int y, int z, org.spongepowered.api.item.inventory.ItemStack itemStack, Cause cause) {
+        return FakePlayer.controller.dig(this, x, y, z, checkNotNull(itemStack, "itemStack"), getProfileFromCause(cause), cause);
+    }
+
+    @Override
+    public int getBlockDigTimeWith(int x, int y, int z, org.spongepowered.api.item.inventory.ItemStack itemStack, Cause cause) {
+        return FakePlayer.controller.digTime(this, x, y, z, checkNotNull(itemStack, "itemStack"), getProfileFromCause(cause), cause);
     }
 
     @Override
