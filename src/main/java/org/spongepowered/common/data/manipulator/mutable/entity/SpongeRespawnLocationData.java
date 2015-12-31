@@ -29,11 +29,11 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.flowpowered.math.vector.Vector3d;
 import com.google.common.collect.Maps;
 import org.spongepowered.api.data.DataContainer;
-import org.spongepowered.api.data.MemoryDataContainer;
 import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.manipulator.immutable.entity.ImmutableRespawnLocation;
 import org.spongepowered.api.data.manipulator.mutable.entity.RespawnLocationData;
 import org.spongepowered.api.data.value.mutable.MapValue;
+import org.spongepowered.api.util.Tuple;
 import org.spongepowered.api.world.World;
 import org.spongepowered.common.data.manipulator.immutable.entity.ImmutableSpongeRespawnLocation;
 import org.spongepowered.common.data.manipulator.mutable.common.collection.AbstractSingleMapData;
@@ -43,14 +43,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-public class SpongeRespawnLocationData extends AbstractSingleMapData<UUID, Vector3d, RespawnLocationData, ImmutableRespawnLocation>
+public class SpongeRespawnLocationData extends AbstractSingleMapData<UUID, Tuple<Vector3d, Boolean>, RespawnLocationData, ImmutableRespawnLocation>
         implements RespawnLocationData {
 
     public SpongeRespawnLocationData() {
         this(Maps.newHashMap());
     }
 
-    public SpongeRespawnLocationData(Map<UUID, Vector3d> locations) {
+    public SpongeRespawnLocationData(Map<UUID, Tuple<Vector3d, Boolean>> locations) {
         super(RespawnLocationData.class, locations, Keys.RESPAWN_LOCATIONS, ImmutableSpongeRespawnLocation.class);
     }
 
@@ -61,18 +61,30 @@ public class SpongeRespawnLocationData extends AbstractSingleMapData<UUID, Vecto
     }
 
     @Override
-    public MapValue<UUID, Vector3d> respawnLocation() {
+    public MapValue<UUID, Tuple<Vector3d, Boolean>> respawnLocation() {
         return new SpongeMapValue<>(Keys.RESPAWN_LOCATIONS, getValue());
     }
 
     @Override
-    public Optional<Vector3d> getForWorld(World world) {
+    public Optional<Tuple<Vector3d, Boolean>> getForWorld(World world) {
         return Optional.ofNullable(getValue().get(checkNotNull(world, "world").getUniqueId()));
     }
 
     @Override
     public int compareTo(RespawnLocationData o) {
         return 0;
+    }
+
+    @Override
+    public Optional<Vector3d> getLocation(World world) {
+        Optional<Tuple<Vector3d, Boolean>> tuple = getForWorld(world);
+        return tuple.isPresent() ? Optional.of(tuple.get().getFirst()) : Optional.empty();
+    }
+
+    @Override
+    public Optional<Boolean> isSpawnForced(World world) {
+        Optional<Tuple<Vector3d, Boolean>> tuple = getForWorld(world);
+        return tuple.isPresent() ? Optional.of(tuple.get().getSecond()) : Optional.empty();
     }
 
 }

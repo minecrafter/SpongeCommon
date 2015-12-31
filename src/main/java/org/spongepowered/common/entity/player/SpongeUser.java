@@ -45,6 +45,7 @@ import org.spongepowered.api.item.inventory.Carrier;
 import org.spongepowered.api.item.inventory.ItemStack;
 import org.spongepowered.api.item.inventory.equipment.EquipmentType;
 import org.spongepowered.api.item.inventory.type.CarriedInventory;
+import org.spongepowered.api.util.Tuple;
 import org.spongepowered.common.data.util.DataQueries;
 import org.spongepowered.common.data.util.NbtDataUtil;
 import org.spongepowered.common.registry.type.world.WorldPropertyRegistryModule;
@@ -78,7 +79,7 @@ public class SpongeUser implements ArmorEquipable, Tamer, DataSerializable, Carr
     private final User self = (User) this; // convenient access
     private final GameProfile profile;
 
-    private final Map<UUID, Vector3d> spawnLocations = Maps.newHashMap();
+    private final Map<UUID, Tuple<Vector3d, Boolean>> spawnLocations = Maps.newHashMap();
 
     public SpongeUser(GameProfile profile) {
         this.profile = profile;
@@ -97,7 +98,8 @@ public class SpongeUser implements ArmorEquipable, Tamer, DataSerializable, Carr
             Vector3d pos = new Vector3d(compound.getInteger(NbtDataUtil.USER_SPAWN_X),
                     compound.getInteger(NbtDataUtil.USER_SPAWN_Y),
                     compound.getInteger(NbtDataUtil.USER_SPAWN_Z));
-            this.spawnLocations.put(WorldPropertyRegistryModule.dimIdToUuid(0), pos);
+            boolean forced = compound.getBoolean(NbtDataUtil.USER_SPAWN_FORCED);
+            this.spawnLocations.put(WorldPropertyRegistryModule.dimIdToUuid(0), new Tuple<>(pos, forced));
         }
         NBTTagList spawnlist = compound.getTagList(NbtDataUtil.USER_SPAWN_LIST, NbtDataUtil.TAG_COMPOUND);
         for (int i = 0; i < spawnlist.tagCount(); i++) {
@@ -105,9 +107,10 @@ public class SpongeUser implements ArmorEquipable, Tamer, DataSerializable, Carr
             UUID uuid = WorldPropertyRegistryModule.dimIdToUuid(spawndata.getInteger(NbtDataUtil.USER_SPAWN_DIM));
             if (uuid != null) {
                 this.spawnLocations.put(uuid,
-                        new Vector3d(spawndata.getInteger(NbtDataUtil.USER_SPAWN_X),
+                        new Tuple<>(new Vector3d(spawndata.getInteger(NbtDataUtil.USER_SPAWN_X),
                                 spawndata.getInteger(NbtDataUtil.USER_SPAWN_Y),
-                                spawndata.getInteger(NbtDataUtil.USER_SPAWN_Z)));
+                                spawndata.getInteger(NbtDataUtil.USER_SPAWN_Z)),
+                                spawndata.getBoolean(NbtDataUtil.USER_SPAWN_FORCED)));
             }
         }
         // TODO Read: inventory, any other data that should be
@@ -122,24 +125,25 @@ public class SpongeUser implements ArmorEquipable, Tamer, DataSerializable, Carr
         compound.removeTag(NbtDataUtil.USER_SPAWN_LIST);
 
         NBTTagList spawnlist = new NBTTagList();
-        for (Entry<UUID, Vector3d> entry : this.spawnLocations.entrySet()) {
+        for (Entry<UUID, Tuple<Vector3d, Boolean>> entry : this.spawnLocations.entrySet()) {
             int dim = WorldPropertyRegistryModule.uuidToDimId(entry.getKey());
             if (dim == Integer.MIN_VALUE) {
                 continue;
             }
-            Vector3d pos = entry.getValue();
+            Vector3d pos = entry.getValue().getFirst();
+            boolean forced = entry.getValue().getSecond();
             if (dim == 0) { // Overworld
                 compound.setDouble(NbtDataUtil.USER_SPAWN_X, pos.getX());
                 compound.setDouble(NbtDataUtil.USER_SPAWN_Y, pos.getY());
                 compound.setDouble(NbtDataUtil.USER_SPAWN_Z, pos.getZ());
-                compound.setBoolean(NbtDataUtil.USER_SPAWN_FORCED, false); // No way to know
+                compound.setBoolean(NbtDataUtil.USER_SPAWN_FORCED, forced);
             } else {
                 NBTTagCompound spawndata = new NBTTagCompound();
                 spawndata.setInteger(NbtDataUtil.USER_SPAWN_DIM, dim);
                 spawndata.setDouble(NbtDataUtil.USER_SPAWN_X, pos.getX());
                 spawndata.setDouble(NbtDataUtil.USER_SPAWN_Y, pos.getY());
                 spawndata.setDouble(NbtDataUtil.USER_SPAWN_Z, pos.getZ());
-                spawndata.setBoolean(NbtDataUtil.USER_SPAWN_FORCED, false); // No way to know
+                spawndata.setBoolean(NbtDataUtil.USER_SPAWN_FORCED, forced);
                 spawnlist.appendTag(spawndata);
             }
         }
@@ -249,7 +253,7 @@ public class SpongeUser implements ArmorEquipable, Tamer, DataSerializable, Carr
     }
 
     @Override
-    public Map<UUID, Vector3d> getBedlocations() {
+    public Map<UUID, Tuple<Vector3d, Boolean>> getBedlocations() {
         Optional<Player> player = this.self.getPlayer();
         if (player.isPresent()) {
             return ((ISpongeUser) player.get()).getBedlocations();
@@ -258,7 +262,7 @@ public class SpongeUser implements ArmorEquipable, Tamer, DataSerializable, Carr
     }
 
     @Override
-    public boolean setBedLocations(Map<UUID, Vector3d> value) {
+    public boolean setBedLocations(Map<UUID, Tuple<Vector3d, Boolean>> value) {
         Optional<Player> player = this.self.getPlayer();
         if (player.isPresent()) {
             return ((ISpongeUser) player.get()).setBedLocations(value);
@@ -267,6 +271,18 @@ public class SpongeUser implements ArmorEquipable, Tamer, DataSerializable, Carr
         this.spawnLocations.putAll(value);
         this.markDirty();
         return true;
+    }
+
+    @Override
+    public ImmutableMap<UUID, Tuple<Vector3d, Boolean>> removeAllBeds() {
+        Optional<Player> player = this.self.getPlayer();
+        if (player.isPresent()) {
+            return ((ISpongeUser) player.get()).removeAllBeds();
+        }
+        ImmutableMap<UUID, Tuple<Vector3d, Boolean>> locations = ImmutableMap.copyOf(this.spawnLocations);
+        this.spawnLocations.clear();
+        this.markDirty();
+        return locations;
     }
 
     private void markDirty() {
@@ -294,18 +310,6 @@ public class SpongeUser implements ArmorEquipable, Tamer, DataSerializable, Carr
         } catch (IOException e) {
             SpongeHooks.logWarning("Failed to save user file {}. {}", dataFile, e);
         }
-    }
-
-    @Override
-    public ImmutableMap<UUID, Vector3d> removeAllBeds() {
-        Optional<Player> player = this.self.getPlayer();
-        if (player.isPresent()) {
-            return ((ISpongeUser) player.get()).removeAllBeds();
-        }
-        ImmutableMap<UUID, Vector3d> locations = ImmutableMap.copyOf(this.spawnLocations);
-        this.spawnLocations.clear();
-        this.markDirty();
-        return locations;
     }
 
 }

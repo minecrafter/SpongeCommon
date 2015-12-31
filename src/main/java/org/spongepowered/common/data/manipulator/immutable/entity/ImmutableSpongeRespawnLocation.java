@@ -31,6 +31,7 @@ import org.spongepowered.api.data.key.Keys;
 import org.spongepowered.api.data.manipulator.immutable.entity.ImmutableRespawnLocation;
 import org.spongepowered.api.data.manipulator.mutable.entity.RespawnLocationData;
 import org.spongepowered.api.data.value.immutable.ImmutableMapValue;
+import org.spongepowered.api.util.Tuple;
 import org.spongepowered.api.world.World;
 import org.spongepowered.common.data.manipulator.immutable.common.collection.AbstractImmutableSingleMapData;
 import org.spongepowered.common.data.manipulator.mutable.entity.SpongeRespawnLocationData;
@@ -40,23 +41,23 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-public class ImmutableSpongeRespawnLocation extends AbstractImmutableSingleMapData<UUID, Vector3d, ImmutableRespawnLocation, RespawnLocationData>
+public class ImmutableSpongeRespawnLocation extends AbstractImmutableSingleMapData<UUID, Tuple<Vector3d, Boolean>, ImmutableRespawnLocation, RespawnLocationData>
         implements ImmutableRespawnLocation {
 
-    private final ImmutableMapValue<UUID, Vector3d> locations;
+    private final ImmutableMapValue<UUID, Tuple<Vector3d, Boolean>> locations;
 
-    public ImmutableSpongeRespawnLocation(Map<UUID, Vector3d> locations) {
+    public ImmutableSpongeRespawnLocation(Map<UUID, Tuple<Vector3d, Boolean>> locations) {
         super(ImmutableRespawnLocation.class, locations, Keys.RESPAWN_LOCATIONS, SpongeRespawnLocationData.class);
         this.locations = new ImmutableSpongeMapValue<>(Keys.RESPAWN_LOCATIONS, locations);
     }
 
     @Override
-    public ImmutableMapValue<UUID, Vector3d> respawnLocation() {
+    public ImmutableMapValue<UUID, Tuple<Vector3d, Boolean>> respawnLocation() {
         return this.locations;
     }
 
     @Override
-    public Optional<Vector3d> getForWorld(World world) {
+    public Optional<Tuple<Vector3d, Boolean>> getForWorld(World world) {
         return Optional.ofNullable(this.getValue().get(checkNotNull(world, "world").getUniqueId()));
     }
 
