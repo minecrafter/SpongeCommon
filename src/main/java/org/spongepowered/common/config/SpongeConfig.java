@@ -102,6 +102,7 @@ public class SpongeConfig<T extends SpongeConfig.ConfigBase> {
     // GENERAL
     public static final String GENERAL_DISABLE_WARNINGS = "disable-warnings";
     public static final String GENERAL_CHUNK_LOAD_OVERRIDE = "chunk-load-override";
+    public static final String GENERAL_PLUGINS_DIR = "plugins-dir";
 
     // LOGGING
     public static final String LOGGING_BLOCK_BREAK = "block-break";
@@ -460,6 +461,9 @@ public class SpongeConfig<T extends SpongeConfig.ConfigBase> {
         @Setting(value = GENERAL_CHUNK_LOAD_OVERRIDE,
                 comment = "Forces Chunk Loading on provide requests (speedup for mods that don't check if a chunk is loaded)")
         private boolean chunkLoadOverride = false;
+        @Setting(value = GENERAL_PLUGINS_DIR,
+                comment = "Additional directory to search for plugins, relative to the execution root or specified as an absolute path")
+        private String pluginsDir = "${CANONICAL_MODS_DIR}/plugins";
 
         public boolean disableWarnings() {
             return this.disableWarnings;
@@ -475,6 +479,14 @@ public class SpongeConfig<T extends SpongeConfig.ConfigBase> {
 
         public void setChunkLoadOverride(boolean chunkLoadOverride) {
             this.chunkLoadOverride = chunkLoadOverride;
+        }
+        
+        public String pluginsDir() {
+            return this.pluginsDir;
+        }
+        
+        public void setPluginsDir(String pluginsDir) {
+            this.pluginsDir = pluginsDir;
         }
     }
 
