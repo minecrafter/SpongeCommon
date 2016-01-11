@@ -77,9 +77,10 @@ public class SpongeBiomeGenerationSettings implements BiomeGenerationSettings {
         return this.genpopulator;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public List<GenerationPopulator> getGenerationPopulators(Class<? extends GenerationPopulator> type) {
-        return this.genpopulator.stream().filter((p) -> {
+    public <G extends GenerationPopulator> List<G> getGenerationPopulators(Class<G> type) {
+        return (List<G>) this.genpopulator.stream().filter((p) -> {
             return type.isAssignableFrom(p.getClass());
         }).collect(Collectors.toList());
     }

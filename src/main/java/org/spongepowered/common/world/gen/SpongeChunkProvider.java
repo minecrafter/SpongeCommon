@@ -186,16 +186,18 @@ public class SpongeChunkProvider implements WorldGenerator, IChunkProvider {
         return this.biomeSettings.get(type);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public List<GenerationPopulator> getGenerationPopulators(Class<? extends GenerationPopulator> type) {
-        return this.genpop.stream().filter((p) -> {
+    public <G extends GenerationPopulator> List<G> getGenerationPopulators(Class<G> type) {
+        return (List<G>) this.genpop.stream().filter((p) -> {
             return type.isAssignableFrom(p.getClass());
         }).collect(Collectors.toList());
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public List<Populator> getPopulators(Class<? extends Populator> type) {
-        return this.pop.stream().filter((p) -> {
+    public <P extends Populator> List<P> getPopulators(Class<P> type) {
+        return (List<P>) this.pop.stream().filter((p) -> {
             return type.isAssignableFrom(p.getClass());
         }).collect(Collectors.toList());
     }

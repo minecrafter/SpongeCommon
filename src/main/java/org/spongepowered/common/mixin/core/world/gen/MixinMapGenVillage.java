@@ -24,13 +24,20 @@
  */
 package org.spongepowered.common.mixin.core.world.gen;
 
+import com.google.common.collect.Lists;
 import net.minecraft.world.ChunkCoordIntPair;
 import net.minecraft.world.World;
+import net.minecraft.world.biome.WorldChunkManager;
 import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraft.world.gen.structure.MapGenStructure;
 import net.minecraft.world.gen.structure.MapGenVillage;
 import org.spongepowered.api.world.Chunk;
+import org.spongepowered.api.world.biome.BiomeType;
+import org.spongepowered.api.world.gen.structure.Village;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.common.interfaces.world.gen.IFlaggedPopulator;
 import org.spongepowered.common.world.gen.WorldGenConstants;
 
@@ -44,8 +51,14 @@ import java.util.Random;
  * preserving vanilla functionality.
  */
 @Mixin(MapGenVillage.class)
-public abstract class MixinMapGenVillage extends MapGenStructure implements IFlaggedPopulator {
+public abstract class MixinMapGenVillage extends MapGenStructure implements IFlaggedPopulator, Village {
 
+    @Shadow private int terrainType;
+    @Shadow private int field_82665_g; // distance
+    
+    @SuppressWarnings("unchecked")
+    private List<BiomeType> validBiomes = Lists.newArrayList(MapGenVillage.villageSpawnBiomes);
+    
     @Override
     public void populate(IChunkProvider provider, Chunk chunk, Random rand, List<String> flags) {
         World world = (World) chunk.getWorld();
@@ -54,5 +67,37 @@ public abstract class MixinMapGenVillage extends MapGenStructure implements IFla
             flags.add(WorldGenConstants.VILLAGE_FLAG);
         }
     }
+    
+    @Override
+    public int getSize() {
+        return this.terrainType;
+    }
+    
+    @Override
+    public void setSize(int range) {
+        this.terrainType = range;
+    }
+    
+    @Override
+    public int getDistance() {
+        return this.field_82665_g;
+    }
+    
+    @Override
+    public void setDistance(int range) {
+        this.field_82665_g = range;
+    }
+    
+    @Override
+    public List<BiomeType> getValidBiomes() {
+        return this.validBiomes;
+    }
 
+    @Redirect(method = "canSpawnStructureAtCoords", at = @At(value = "INVOKE",
+            target = "Lnet/minecraft/world/biome/WorldChunkManager;areBiomesViable(IIILjava/util/List;)Z") )
+    private boolean onAreBiomesViable(WorldChunkManager wcm, int x, int y, int z, List types) {
+        //Replace the list with our own
+        return wcm.areBiomesViable(x, y, z, this.validBiomes);
+    }
+    
 }

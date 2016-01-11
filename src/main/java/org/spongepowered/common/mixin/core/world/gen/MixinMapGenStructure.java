@@ -26,10 +26,11 @@ package org.spongepowered.common.mixin.core.world.gen;
 
 import net.minecraft.world.ChunkCoordIntPair;
 import net.minecraft.world.World;
+import net.minecraft.world.gen.MapGenBase;
 import net.minecraft.world.gen.structure.MapGenStructure;
 import org.spongepowered.api.world.Chunk;
-import org.spongepowered.api.world.gen.Populator;
 import org.spongepowered.api.world.gen.PopulatorType;
+import org.spongepowered.api.world.gen.structure.Structure;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.common.world.gen.InternalPopulatorTypes;
@@ -42,7 +43,7 @@ import java.util.Random;
  * phase and the population phase of chunk creation.
  */
 @Mixin(MapGenStructure.class)
-public abstract class MixinMapGenStructure implements Populator {
+public abstract class MixinMapGenStructure implements Structure {
 
     @Shadow
     public abstract boolean generateStructure(World worldIn, Random p_175794_2_, ChunkCoordIntPair p_175794_3_);
