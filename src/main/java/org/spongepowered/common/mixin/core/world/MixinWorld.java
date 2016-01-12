@@ -1953,6 +1953,7 @@ public abstract class MixinWorld implements World, IMixinWorld {
         this.spongegen = new SpongeChunkProvider((net.minecraft.world.World) (Object) this, newGenerator.getBaseGenerationPopulator(),
                 newGenerator.getBiomeGenerator());
         this.spongegen.setGenerationPopulators(newGenerator.getGenerationPopulators());
+        this.spongegen.setStructures(newGenerator.getStructures());
         this.spongegen.setPopulators(newGenerator.getPopulators());
         this.spongegen.setBiomeOverrides(newGenerator.getBiomeSettings());
 

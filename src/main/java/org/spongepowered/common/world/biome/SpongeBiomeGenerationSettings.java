@@ -24,11 +24,11 @@
  */
 package org.spongepowered.common.world.biome;
 
-import com.google.common.collect.Lists;
 import org.spongepowered.api.world.biome.BiomeGenerationSettings;
 import org.spongepowered.api.world.biome.GroundCoverLayer;
 import org.spongepowered.api.world.gen.GenerationPopulator;
 import org.spongepowered.api.world.gen.Populator;
+import org.spongepowered.api.world.gen.structure.Structure;
 import org.spongepowered.common.util.NonNullArrayList;
 
 import java.util.List;
@@ -40,8 +40,9 @@ public class SpongeBiomeGenerationSettings implements BiomeGenerationSettings {
     private float maxHeight;
 
     private final List<Populator> populators = new NonNullArrayList<>();
-    private final List<GenerationPopulator> genpopulator = Lists.newArrayList();
-    private final List<GroundCoverLayer> groundcover = Lists.newArrayList();
+    private final List<Structure> structures = new NonNullArrayList<>();
+    private final List<GenerationPopulator> genpopulator = new NonNullArrayList<>();
+    private final List<GroundCoverLayer> groundcover = new NonNullArrayList<>();
 
     public SpongeBiomeGenerationSettings() {
 
@@ -81,6 +82,19 @@ public class SpongeBiomeGenerationSettings implements BiomeGenerationSettings {
     @Override
     public <G extends GenerationPopulator> List<G> getGenerationPopulators(Class<G> type) {
         return (List<G>) this.genpopulator.stream().filter((p) -> {
+            return type.isAssignableFrom(p.getClass());
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Structure> getStructures() {
+        return this.structures;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <S extends Structure> List<S> getStructures(Class<S> type) {
+        return (List<S>) this.structures.stream().filter((p) -> {
             return type.isAssignableFrom(p.getClass());
         }).collect(Collectors.toList());
     }

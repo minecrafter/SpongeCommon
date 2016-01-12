@@ -45,6 +45,8 @@ import org.spongepowered.api.block.BlockState;
 import org.spongepowered.api.block.BlockTypes;
 import org.spongepowered.api.util.weighted.VariableAmount;
 import org.spongepowered.api.world.World;
+import org.spongepowered.api.world.WorldCreationSettings;
+import org.spongepowered.api.world.biome.BiomeTypes;
 import org.spongepowered.api.world.extent.ImmutableBiomeArea;
 import org.spongepowered.api.world.extent.MutableBiomeArea;
 import org.spongepowered.api.world.extent.MutableBlockVolume;
@@ -54,6 +56,7 @@ import org.spongepowered.api.world.gen.Populator;
 import org.spongepowered.api.world.gen.WorldGenerator;
 import org.spongepowered.api.world.gen.populator.Dungeon;
 import org.spongepowered.api.world.gen.populator.Lake;
+import org.spongepowered.api.world.gen.structure.Structure;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
@@ -69,6 +72,9 @@ import org.spongepowered.common.world.gen.WorldGenConstants;
 import org.spongepowered.common.world.gen.populators.AnimalPopulator;
 import org.spongepowered.common.world.gen.populators.FilteredPopulator;
 import org.spongepowered.common.world.gen.populators.SnowPopulator;
+import org.spongepowered.common.world.gen.structure.DesertTempleStructure;
+import org.spongepowered.common.world.gen.structure.JungleTempleStructure;
+import org.spongepowered.common.world.gen.structure.WitchHutStructure;
 
 import java.util.Random;
 
@@ -121,32 +127,35 @@ public abstract class MixinChunkProviderGenerate implements IChunkProvider, Gene
             generator.getGenerationPopulators().add((GenerationPopulator) this.ravineGenerator);
         }
 
-        // Structures are both generation populators and populators as they are
-        // placed in a two phase system
-
         if (this.settings.useMineShafts && this.mapFeaturesEnabled) {
-            generator.getGenerationPopulators().add((GenerationPopulator) this.mineshaftGenerator);
-            generator.getPopulators().add((Populator) this.mineshaftGenerator);
+            generator.getStructures().add((Structure) this.mineshaftGenerator);
         }
 
         if (this.settings.useVillages && this.mapFeaturesEnabled) {
-            generator.getGenerationPopulators().add((GenerationPopulator) this.villageGenerator);
-            generator.getPopulators().add((Populator) this.villageGenerator);
+            generator.getStructures().add((Structure) this.villageGenerator);
         }
 
         if (this.settings.useStrongholds && this.mapFeaturesEnabled) {
-            generator.getGenerationPopulators().add((GenerationPopulator) this.strongholdGenerator);
-            generator.getPopulators().add((Populator) this.strongholdGenerator);
+            generator.getStructures().add((Structure) this.strongholdGenerator);
         }
 
         if (this.settings.useTemples && this.mapFeaturesEnabled) {
-            generator.getGenerationPopulators().add((GenerationPopulator) this.scatteredFeatureGenerator);
-            generator.getPopulators().add((Populator) this.scatteredFeatureGenerator);
+            // MapGenScatteredFeature is split in three and added to only the
+            // specific biome structure lists
+            JungleTempleStructure jungleTemple = new JungleTempleStructure(this.worldObj);
+            generator.getBiomeSettings(BiomeTypes.JUNGLE).getStructures().add(jungleTemple);
+            generator.getBiomeSettings(BiomeTypes.JUNGLE_HILLS).getStructures().add(jungleTemple);
+            
+            DesertTempleStructure desertTemple = new DesertTempleStructure(this.worldObj);
+            generator.getBiomeSettings(BiomeTypes.DESERT).getStructures().add(desertTemple);
+            generator.getBiomeSettings(BiomeTypes.DESERT_HILLS).getStructures().add(desertTemple);
+            
+            WitchHutStructure swampHut = new WitchHutStructure(this.worldObj);
+            generator.getBiomeSettings(BiomeTypes.SWAMPLAND).getStructures().add(swampHut);
         }
 
         if (this.settings.useMonuments && this.mapFeaturesEnabled) {
-            generator.getGenerationPopulators().add((GenerationPopulator) this.oceanMonumentGenerator);
-            generator.getPopulators().add((Populator) this.oceanMonumentGenerator);
+            generator.getStructures().add((Structure) this.oceanMonumentGenerator);
         }
 
         if (this.settings.useWaterLakes) {

@@ -79,16 +79,6 @@ public abstract class MixinMapGenVillage extends MapGenStructure implements IFla
     }
     
     @Override
-    public int getDistance() {
-        return this.field_82665_g;
-    }
-    
-    @Override
-    public void setDistance(int range) {
-        this.field_82665_g = range;
-    }
-    
-    @Override
     public List<BiomeType> getValidBiomes() {
         return this.validBiomes;
     }
