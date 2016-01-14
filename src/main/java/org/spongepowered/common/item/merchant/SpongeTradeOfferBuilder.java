@@ -33,6 +33,7 @@ import org.spongepowered.api.data.DataView;
 import org.spongepowered.api.data.persistence.DataBuilder;
 import org.spongepowered.api.data.persistence.InvalidDataException;
 import org.spongepowered.api.item.inventory.ItemStack;
+import org.spongepowered.api.item.inventory.ItemStackSnapshot;
 import org.spongepowered.api.item.merchant.TradeOffer;
 import org.spongepowered.api.data.DataManager;
 import org.spongepowered.common.data.SpongeDataManager;
@@ -43,9 +44,9 @@ import java.util.Optional;
 
 public class SpongeTradeOfferBuilder extends AbstractDataBuilder<TradeOffer> implements TradeOffer.Builder, DataBuilder<TradeOffer> {
 
-    private ItemStack firstItem;
-    private ItemStack secondItem;
-    private ItemStack sellingItem;
+    private ItemStackSnapshot firstItem;
+    private ItemStackSnapshot secondItem;
+    private ItemStackSnapshot sellingItem;
     private int useCount;
     private int maxUses;
     private boolean allowsExperience;
@@ -58,20 +59,20 @@ public class SpongeTradeOfferBuilder extends AbstractDataBuilder<TradeOffer> imp
     @Override
     public TradeOffer.Builder firstBuyingItem(ItemStack item) {
         checkNotNull(item, "Buying item cannot be null");
-        this.firstItem = item;
+        this.firstItem = item.createSnapshot();
         return this;
     }
 
     @Override
     public TradeOffer.Builder secondBuyingItem(ItemStack item) {
-        this.secondItem = item;
+        this.secondItem = item.createSnapshot();
         return this;
     }
 
     @Override
     public TradeOffer.Builder sellingItem(ItemStack item) {
         checkNotNull(item, "Selling item cannot be null");
-        this.sellingItem = item;
+        this.sellingItem = item.createSnapshot();
         return this;
     }
 

@@ -24,6 +24,7 @@
  */
 package org.spongepowered.common.data.util;
 
+import com.google.common.collect.Multimap;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityTracker;
 import net.minecraft.entity.EntityTrackerEntry;
@@ -34,14 +35,25 @@ import net.minecraft.network.play.server.S10PacketSpawnPainting;
 import net.minecraft.network.play.server.S13PacketDestroyEntities;
 import net.minecraft.network.play.server.S38PacketPlayerListItem;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.village.MerchantRecipe;
+import net.minecraft.village.MerchantRecipeList;
 import net.minecraft.world.WorldServer;
+import org.spongepowered.api.data.type.Career;
+import org.spongepowered.api.data.type.Profession;
 import org.spongepowered.api.entity.EntitySnapshot;
+import org.spongepowered.api.item.merchant.TradeOffer;
+import org.spongepowered.api.item.merchant.generation.TradeOfferGenerator;
 import org.spongepowered.common.SpongeImpl;
+import org.spongepowered.common.entity.SpongeProfession;
 import org.spongepowered.common.interfaces.entity.IMixinEntity;
+import org.spongepowered.common.registry.SpongeVillagerRegistry;
+import org.spongepowered.common.registry.type.entity.ProfessionRegistryModule;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 
 import javax.annotation.Nullable;
@@ -90,9 +102,9 @@ public final class EntityUtil {
     @SuppressWarnings("unchecked")
     public static boolean refreshPainting(EntityPainting painting, EntityPainting.EnumArt art) {
         final EntityTracker paintingTracker = ((WorldServer) painting.worldObj).getEntityTracker();
-        EntityTrackerEntry paintingEntry = (EntityTrackerEntry) paintingTracker.trackedEntityHashTable.lookup(painting.getEntityId());
+        EntityTrackerEntry paintingEntry = paintingTracker.trackedEntityHashTable.lookup(painting.getEntityId());
         List<EntityPlayerMP> playerMPs = new ArrayList<>();
-        for (EntityPlayerMP player : (Set<EntityPlayerMP>) paintingEntry.trackingPlayers) {
+        for (EntityPlayerMP player : paintingEntry.trackingPlayers) {
             S13PacketDestroyEntities packet = new S13PacketDestroyEntities(painting.getEntityId());
             player.playerNetServerHandler.sendPacket(packet);
             playerMPs.add(player);
@@ -115,9 +127,9 @@ public final class EntityUtil {
     public static boolean toggleInvisibility(Entity entity, boolean vanish) {
         EntityTracker entityTracker = ((WorldServer) entity.worldObj).getEntityTracker();
         if (vanish) {
-            EntityTrackerEntry entry = (EntityTrackerEntry) entityTracker.trackedEntityHashTable.lookup(entity.getEntityId());
+            EntityTrackerEntry entry = entityTracker.trackedEntityHashTable.lookup(entity.getEntityId());
             if (entry != null) {
-                Set<EntityPlayerMP> entityPlayerMPs = new HashSet<>((Set<EntityPlayerMP>) entry.trackingPlayers);
+                Set<EntityPlayerMP> entityPlayerMPs = new HashSet<>(entry.trackingPlayers);
                 entityPlayerMPs.forEach(player -> {
                     if (player != entity) { // don't remove ourselves
                         entry.removeFromTrackedPlayers(player);
@@ -132,23 +144,36 @@ public final class EntityUtil {
             if (!entityTracker.trackedEntityHashTable.containsItem(entity.getEntityId())) {
                 entityTracker.trackEntity(entity);
             }
-            EntityTrackerEntry entry = (EntityTrackerEntry) entityTracker.trackedEntityHashTable.lookup(entity.getEntityId());
+            EntityTrackerEntry entry = entityTracker.trackedEntityHashTable.lookup(entity.getEntityId());
 
-            for (EntityPlayerMP playerMP : (List<EntityPlayerMP>) MinecraftServer.getServer().getConfigurationManager().getPlayerList()) {
-                if (entity != playerMP) { // don't remove ourselves
-                    if (entity instanceof EntityPlayerMP) {
-                        Packet packet = new S38PacketPlayerListItem(S38PacketPlayerListItem.Action.ADD_PLAYER, (EntityPlayerMP) entity);
-                        playerMP.playerNetServerHandler.sendPacket(packet);
-                    }
-                    Packet newPacket = entry.func_151260_c(); // creates the spawn packet for us
-                    playerMP.playerNetServerHandler.sendPacket(newPacket);
-                }
-            }
+            MinecraftServer.getServer().getConfigurationManager().getPlayerList().stream()
+                    .filter(playerMP -> entity != playerMP)
+                    .forEach(playerMP -> { // don't remove ourselves
+                        if (entity instanceof EntityPlayerMP) {
+                            Packet<?> packet = new S38PacketPlayerListItem(S38PacketPlayerListItem.Action.ADD_PLAYER, (EntityPlayerMP) entity);
+                            playerMP.playerNetServerHandler.sendPacket(packet);
+                        }
+                        Packet<?> newPacket = entry.func_151260_c(); // creates the spawn packet for us
+                        playerMP.playerNetServerHandler.sendPacket(newPacket);
+                    });
             entityTracker.updateTrackedEntities();
         }
         entity.setInvisible(vanish);
         ((IMixinEntity) entity).setReallyInvisible(vanish);
         return true;
+    }
+
+    public static Profession validateProfession(int professionId) {
+        List<Profession> professions = (List<Profession>) ProfessionRegistryModule.getInstance().getAll();
+        for (Profession profession : professions) {
+            if (profession instanceof SpongeProfession) {
+                if (professionId == ((SpongeProfession) profession).type) {
+                    return profession;
+                }
+            }
+        }
+        throw new IllegalStateException("Invalid Villager profession id is present! Found: " + professionId
+                                        + " when the expected contain: " + professions);
     }
 
 }
