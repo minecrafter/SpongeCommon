@@ -31,6 +31,7 @@ import org.spongepowered.api.entity.vehicle.minecart.Minecart;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Group;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.common.interfaces.IMixinMinecart;
@@ -46,7 +47,16 @@ public abstract class MixinEntityMinecart extends MixinEntity implements Minecar
     private Vector3d derailedMod = new Vector3d(0.5D, 0.5D, 0.5D);
 
     // this method overwrites vanilla behavior to allow for a custom deceleration rate when derailed
-    @Inject(method = "moveDerailedMinecart()V", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/item/EntityMinecart;moveEntity(DDD)V"))
+    // At production time, Mixin's refmapper loads the method owner as 'Entity', because that's where
+    // the method actually his. However, in both production and dev time, the class is compiled with the opcode's
+    // owner as EntityMinecart. Since the target and actual owner won't match at production time, the injection fails
+
+    // The (temporary) solution is to specify two @Ats, one manually remapped. The @Group enforces that only one succeeds.
+    @Group(name = "minecartHack", min = 1, max = 1)
+    @Inject(method = "moveDerailedMinecart()V", at = {
+            @At(value = "INVOKE", target = "Lnet/minecraft/entity/item/EntityMinecart;moveEntity(DDD)V", args = "log=true", remap = false),
+            @At(value = "INVOKE", target = "Lnet/minecraft/entity/item/EntityMinecart;func_70091_d(DDD)V", remap = false)
+    })
     public void implementCustomDerailedDeceleration(CallbackInfo ci) {
         if (this.isOnGround()) {
             this.motionX /= 0.5D;
