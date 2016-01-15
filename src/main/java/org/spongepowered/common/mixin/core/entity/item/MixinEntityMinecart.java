@@ -55,7 +55,7 @@ public abstract class MixinEntityMinecart extends MixinEntity implements Minecar
     @Group(name = "minecartHack", min = 1, max = 1)
     @Inject(method = "moveDerailedMinecart()V", at = {
             @At(value = "INVOKE", target = "Lnet/minecraft/entity/item/EntityMinecart;moveEntity(DDD)V", args = "log=true", remap = false),
-            @At(value = "INVOKE", target = "Lnet/minecraft/entity/item/EntityMinecart;func_70091_d(DDD)V", remap = false)
+            @At(value = "INVOKE", target = "Lnet/minecraft/entity/item/EntityMinecart;func_70091_d(DDD)V", args = "log=true", remap = false)
     })
     public void implementCustomDerailedDeceleration(CallbackInfo ci) {
         if (this.isOnGround()) {
