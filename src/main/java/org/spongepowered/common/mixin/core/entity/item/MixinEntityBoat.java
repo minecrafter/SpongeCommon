@@ -55,8 +55,8 @@ public abstract class MixinEntityBoat extends MixinEntity implements Boat {
     // See MixinEntityMinecart for an explanation
     @Group(name = "boatHack", min = 1, max = 1)
     @Inject(method = "onUpdate()V", at = {
-            @At(value = "INVOKE", target = "Lnet/minecraft/entity/item/EntityMinecart;moveEntity(DDD)V", args = "log=true", remap = false),
-            @At(value = "INVOKE", target = "Lnet/minecraft/entity/item/EntityMinecart;func_70091_d(DDD)V", args = "log=true", remap = false)
+            @At(value = "INVOKE", target = "Lnet/minecraft/entity/item/EntityBoat;moveEntity(DDD)V", args = "log=true", remap = false),
+            @At(value = "INVOKE", target = "Lnet/minecraft/entity/item/EntityBoat;func_70091_d(DDD)V", args = "log=true", remap = false)
     })
     public void implementLandBoats(CallbackInfo ci) {
         if (this.onGround && this.moveOnLand) {
