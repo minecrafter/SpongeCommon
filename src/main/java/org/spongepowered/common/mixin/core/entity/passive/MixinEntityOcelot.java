@@ -37,6 +37,7 @@ import org.spongepowered.api.event.entity.TameEntityEvent;
 import org.spongepowered.api.text.translation.Translation;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Group;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.Surrogate;
@@ -53,7 +54,11 @@ public abstract class MixinEntityOcelot extends MixinEntityTameable implements O
 
     private ItemStack currentItemStack;
 
-    @Inject(method = "interact", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/passive/EntityOcelot;isTamed()Z", shift = At.Shift.BEFORE, ordinal = 0), locals = LocalCapture.CAPTURE_FAILHARD)
+    @Group(name = "ocelotHack", min = 1, max = 1)
+    @Inject(method = "interact", at = {
+            @At(value = "INVOKE", target = "Lnet/minecraft/entity/passive/EntityOcelot;isTamed()Z", ordinal = 0, remap = false),
+            @At(value = "INVOKE", target = "Lnet/minecraft/entity/passive/EntityOcelot;func_70909_n()Z", ordinal = 0, remap = false)
+    }, locals = LocalCapture.CAPTURE_FAILHARD)
     public void afterGetCurrentItem(EntityPlayer player, CallbackInfoReturnable<Boolean> cir, ItemStack currentItemStack) {
         if (currentItemStack != null) {
             this.currentItemStack = currentItemStack.copy();
