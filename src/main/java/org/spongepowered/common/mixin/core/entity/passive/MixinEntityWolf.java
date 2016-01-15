@@ -40,6 +40,7 @@ import org.spongepowered.asm.mixin.Intrinsic;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Group;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
@@ -72,7 +73,11 @@ public abstract class MixinEntityWolf extends MixinEntityAnimal implements Wolf 
         this.shadow$setAngry(angry);
     }
 
-    @Inject(method = "interact", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/passive/EntityWolf;isTamed()Z", ordinal = 0), locals = LocalCapture.CAPTURE_FAILHARD)
+    @Group(name = "wolfHack", min = 1, max = 1)
+    @Inject(method = "interact", at = {
+            @At(value = "INVOKE", target = "Lnet/minecraft/entity/passive/EntityWolf;isTamed()Z", ordinal = 0, remap = false),
+            @At(value = "INVOKE", target = "Lnet/minecraft/entity/passive/EntityWolf;func_70909_n()Z", ordinal = 0, remap = false)
+    }, locals = LocalCapture.CAPTURE_FAILHARD)
     public void afterGetCurrentItem(EntityPlayer player, CallbackInfoReturnable<Boolean> cir, ItemStack currentItemStack) {
         if (currentItemStack != null) {
             this.currentItemStack = currentItemStack.copy();
