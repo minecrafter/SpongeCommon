@@ -53,8 +53,8 @@ import java.util.UUID;
 @Mixin(CommandScoreboard.class)
 public abstract class MixinCommandScoreboard extends CommandBase implements IMixinCommandBase {
 
-    // The static method's owner is CommandScoreboard for some odd reason, despite it coming from CommandBase
     private static final String GET_ENTITY_NAME = "Lnet/minecraft/command/server/CommandScoreboard;getEntityName(Lnet/minecraft/command/ICommandSender;Ljava/lang/String;)Ljava/lang/String;";
+    private static final String GET_ENTITY_NAME_REMAPPED = "Lnet/minecraft/command/server/CommandScoreboard;func_175758_e(Lnet/minecraft/command/ICommandSender;Ljava/lang/String;)Ljava/lang/String;";
 
     private static final String ITERATOR_NEXT = "Ljava/util/Iterator;next()Ljava/lang/Object;";
 
@@ -74,7 +74,10 @@ public abstract class MixinCommandScoreboard extends CommandBase implements IMix
         return entity;
     }
 
-    @Redirect(method = "joinTeam", at = @At(value = "INVOKE", target = GET_ENTITY_NAME, ordinal = 0))
+
+            //@At(value = "INVOKE", target = GET_ENTITY_NAME_REMAPPED, ordinal = 0, remap = false)
+            @Redirect(method = "joinTeam", at = {
+                    @At(value = "INVOKE", target = GET_ENTITY_NAME, ordinal = 0, remap = false)})
     public String onGetEntityNameJoin(ICommandSender sender, String string) throws EntityNotFoundException {
         return this.onGetEntityName(sender, string);
     }
