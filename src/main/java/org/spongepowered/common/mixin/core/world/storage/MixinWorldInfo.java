@@ -153,7 +153,7 @@ public abstract class MixinWorldInfo implements WorldProperties, IMixinWorldInfo
 
     @Inject(method = "<init>*", at = @At("RETURN") )
     public void onConstruction(WorldSettings settings, String name, CallbackInfo ci) {
-        if (name.equals("MpServer")) {
+        if (name.equals("MpServer") || name.equals("sponge$dummy_world")) {
             return;
         }
 

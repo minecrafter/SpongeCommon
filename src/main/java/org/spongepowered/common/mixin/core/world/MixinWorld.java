@@ -279,6 +279,9 @@ public abstract class MixinWorld implements World, IMixinWorld {
     @Shadow private net.minecraft.world.border.WorldBorder worldBorder;
     @Shadow public List<EntityPlayer> playerEntities;
 
+    @Shadow public net.minecraft.world.World init() {
+        return null; // Not actually overwritten because @Shadow
+    }
     @Shadow(prefix = "shadow$") public abstract net.minecraft.world.border.WorldBorder shadow$getWorldBorder();
     @Shadow(prefix = "shadow$") public abstract EnumDifficulty shadow$getDifficulty();
     @Shadow public abstract void onEntityAdded(net.minecraft.entity.Entity entityIn);
@@ -317,7 +320,16 @@ public abstract class MixinWorld implements World, IMixinWorld {
         if (SpongeImpl.getGame().getPlatform().getType() == Platform.Type.SERVER) {
             this.worldBorder.addListener(new PlayerBorderListener());
         }
+        if (info == null) {
+            SpongeImpl.getLogger().error("{}",
+                    new RuntimeException("World constructed without a WorldInfo! This will likely cause problems. Subsituting dummy info."));
+            this.worldInfo = new WorldInfo(new WorldSettings(0, WorldSettings.GameType.NOT_SET, false, false, WorldType.DEFAULT),
+                    "sponge$dummy_world");
+        }
+    }
 
+    @Inject(method = "init", at = @At("HEAD") )
+    protected void onWorldInit(CallbackInfoReturnable<net.minecraft.world.World> cir) {
         // Turn on capturing
         this.captureBlocks = true;
         this.captureEntitySpawns = true;

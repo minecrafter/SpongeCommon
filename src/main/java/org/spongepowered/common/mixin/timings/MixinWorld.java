@@ -36,6 +36,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.List;
 
@@ -51,8 +52,8 @@ public class MixinWorld {
 
     protected WorldTimingsHandler timings;
 
-    @Inject(method = "<init>", at = @At("RETURN") )
-    private void onInit(CallbackInfo ci) {
+    @Inject(method = "init", at = @At("HEAD"))
+    private void initTimings(CallbackInfoReturnable<World> cir) {
         this.timings = new WorldTimingsHandler((World) (Object) this);
     }
 
