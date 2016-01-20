@@ -766,21 +766,19 @@ public abstract class MixinMinecraftServer implements Server, ConsoleSource, IMi
         return Optional.of((WorldProperties) worldInfo);
     }
 
+    private static final UUID EMPTY_UUID = UUID.fromString("00000000-0000-0000-0000-000000000000");
+
     private UUID setUuidForProperties(WorldProperties properties) {
         checkNotNull(properties);
 
         UUID uuid;
-        if (properties.getUniqueId() == null || properties.getUniqueId().equals
-                (UUID.fromString("00000000-0000-0000-0000-000000000000"))) {
+        if (properties.getUniqueId() == null || properties.getUniqueId().equals(EMPTY_UUID)) {
             // Check if Bukkit's uid.dat file is here and use it
             final Path uidPath = SpongeImpl.getGame().getSavesDirectory().resolve(properties.getWorldName()).resolve("uid.dat");
             if (!Files.exists(uidPath)) {
                 uuid = UUID.randomUUID();
             } else {
-                DataInputStream dis;
-
-                try {
-                    dis = new DataInputStream(Files.newInputStream(uidPath));
+                try (DataInputStream dis = new DataInputStream(Files.newInputStream(uidPath))) {
                     uuid = new UUID(dis.readLong(), dis.readLong());
                 } catch (IOException e) {
                     SpongeImpl.getLogger().error("World folder [{}] has an existing Bukkit unique identifier for it but we encountered issues "

@@ -26,8 +26,8 @@ package org.spongepowered.common.world;
 
 import ninja.leaping.configurate.ConfigurationNode;
 import ninja.leaping.configurate.yaml.YAMLConfigurationLoader;
-import org.apache.commons.io.FileUtils;
 import org.spongepowered.common.SpongeImpl;
+import org.spongepowered.api.util.CopyDirectoryVisitor;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -35,6 +35,7 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -97,7 +98,7 @@ public class WorldMigrator {
                     SpongeImpl.getLogger().info("Migrating [{}] from [{}].", oldWorldPath.getFileName(), oldWorldContainer);
                     try {
                         worldPath = renameToVanillaNetherOrEnd(worldContainer, oldWorldPath, worldPath);
-                        FileUtils.copyDirectory(oldWorldPath.toFile(), worldPath.toFile());
+                        Files.walkFileTree(oldWorldPath, new CopyDirectoryVisitor(worldPath, StandardCopyOption.COPY_ATTRIBUTES));
                         fixInnerNetherOrEndRegionData(worldPath);
                         removeInnerNameFolder(worldPath);
                         migrated.add(worldPath);
@@ -189,12 +190,12 @@ public class WorldMigrator {
     private static void fixInnerNetherOrEndRegionData(Path oldWorldPath) {
         try {
             // Copy region within DIM-1 to world root
-            com.google.common.io.Files.move(oldWorldPath.resolve("DIM-1").resolve("region").toFile(), oldWorldPath.resolve("region").toFile());
+            Files.move(oldWorldPath.resolve("DIM-1").resolve("region"), oldWorldPath.resolve("region"));
         } catch (IOException ignore) {}
 
         try {
             // Copy region within DIM1 to world root
-            com.google.common.io.Files.move(oldWorldPath.resolve("DIM1").resolve("region").toFile(), oldWorldPath.resolve("region").toFile());
+            Files.move(oldWorldPath.resolve("DIM1").resolve("region"), oldWorldPath.resolve("region"));
         } catch (IOException ignore) {}
     }
 
