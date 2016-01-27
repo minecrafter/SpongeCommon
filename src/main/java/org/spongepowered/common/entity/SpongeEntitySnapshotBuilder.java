@@ -45,7 +45,7 @@ import org.spongepowered.api.world.World;
 import org.spongepowered.api.world.storage.WorldProperties;
 import org.spongepowered.common.data.DataProcessor;
 import org.spongepowered.common.data.builder.AbstractDataBuilder;
-import org.spongepowered.common.data.persistence.NbtTranslator;
+import org.spongepowered.common.data.translator.NbtTranslator;
 import org.spongepowered.common.data.util.DataQueries;
 import org.spongepowered.common.data.util.DataUtil;
 import org.spongepowered.common.data.SpongeDataManager;

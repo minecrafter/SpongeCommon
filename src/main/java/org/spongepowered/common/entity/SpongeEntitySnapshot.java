@@ -57,7 +57,7 @@ import org.spongepowered.common.data.DataProcessor;
 import org.spongepowered.common.data.util.DataQueries;
 import org.spongepowered.common.data.util.DataUtil;
 import org.spongepowered.common.data.SpongeDataManager;
-import org.spongepowered.common.data.persistence.NbtTranslator;
+import org.spongepowered.common.data.translator.NbtTranslator;
 import org.spongepowered.common.interfaces.world.IMixinWorldInfo;
 
 import java.util.Collection;
