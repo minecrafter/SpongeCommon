@@ -29,6 +29,7 @@ import com.google.common.collect.Maps;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockEventData;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.entity.EnumCreatureType;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.BlockPos;
 import net.minecraft.world.IBlockAccess;
@@ -36,11 +37,19 @@ import net.minecraft.world.NextTickListEntry;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldServer;
 import net.minecraft.world.WorldSettings;
+import net.minecraft.world.biome.BiomeGenBase;
 import org.spongepowered.api.block.ScheduledBlockUpdate;
+import org.spongepowered.api.entity.EntityTypes;
+import org.spongepowered.api.entity.Transform;
 import org.spongepowered.api.entity.living.player.Player;
 import org.spongepowered.api.entity.living.player.User;
+import org.spongepowered.api.event.SpongeEventFactory;
 import org.spongepowered.api.event.cause.Cause;
 import org.spongepowered.api.event.cause.NamedCause;
+import org.spongepowered.api.event.cause.entity.spawn.SpawnCause;
+import org.spongepowered.api.event.cause.entity.spawn.SpawnTypes;
+import org.spongepowered.api.event.cause.entity.spawn.WeatherSpawnCause;
+import org.spongepowered.api.event.entity.ConstructEntityEvent;
 import org.spongepowered.api.util.annotation.NonnullByDefault;
 import org.spongepowered.api.world.GeneratorType;
 import org.spongepowered.api.world.GeneratorTypes;
@@ -52,6 +61,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.common.SpongeImpl;
 import org.spongepowered.common.entity.PlayerTracker;
 import org.spongepowered.common.interfaces.IMixinBlockUpdate;
 import org.spongepowered.common.interfaces.IMixinChunk;
@@ -107,6 +117,20 @@ public abstract class MixinWorldServer extends MixinWorld {
         this.currentTickBlock = null;
         this.processingCaptureCause = false;
         this.processingBlockRandomTicks = false;
+    }
+
+    @Redirect(method = "updateBlocks", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/WorldServer;canLightningStrike(Lnet/minecraft/util/BlockPos;)Z"))
+    private boolean onLightningCheck(WorldServer world, BlockPos blockPos) {
+        if (world.canLightningStrike(blockPos)) {
+            Transform<org.spongepowered.api.world.World> transform = new Transform<>((org.spongepowered.api.world.World) this,
+                    VecHelper.toVector(blockPos).toDouble());
+            SpawnCause cause = WeatherSpawnCause.builder().weather(this.getWeather()).type(SpawnTypes.WEATHER).build();
+            ConstructEntityEvent.Pre event = SpongeEventFactory.createConstructEntityEventPre(Cause.of(NamedCause.source(cause)),
+                    EntityTypes.LIGHTNING, transform);
+            SpongeImpl.postEvent(event);
+            return event.isCancelled();
+        }
+        return false;
     }
 
     @Redirect(method = "updateBlockTick", at = @At(value = "INVOKE", target="Lnet/minecraft/block/Block;updateTick(Lnet/minecraft/world/World;Lnet/minecraft/util/BlockPos;Lnet/minecraft/block/state/IBlockState;Ljava/util/Random;)V"))
@@ -292,5 +316,10 @@ public abstract class MixinWorldServer extends MixinWorld {
         // this redirect forces it to return false if a player is sleep-ignored even if they're a spectator
         boolean ignore = entityPlayer instanceof Player && ((Player)entityPlayer).isSleepingIgnored();
         return !ignore && entityPlayer.isSpectator();
+    }
+
+    @Inject(method = "getSpawnListEntryForTypeAt", at = @At("HEAD"))
+    private void onGetSpawnList(EnumCreatureType creatureType, BlockPos pos, CallbackInfoReturnable<BiomeGenBase.SpawnListEntry> callbackInfo) {
+        StaticMixinHelper.gettingSpawnList = true;
     }
 }
